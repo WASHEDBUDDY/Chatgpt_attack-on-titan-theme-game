@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wall Runner Mobile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+      text-align: center;
+      user-select: none;
+      touch-action: none;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      background: #87ceeb;
+      display: block;
+      margin: auto;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+    }
+
+    button {
+      width: 70px;
+      height: 70px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 12px;
+      border: none;
+      background: #555;
+      color: white;
+    }
+
+    button:active {
+      background: #777;
+    }
+  </style>
+</head>
+
+<body>
+
+<canvas id="game" width="360" height="400"></canvas>
+
+<div class="controls">
+  <button id="left">L</button>
+  <button id="jump">J</button>
+  <button id="right">R</button>
+  <button id="attack">ATK</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player = {
+  x: 40,
+  y: 300,
+  w: 25,
+  h: 40,
+  vx: 0,
+  vy: 0,
+  onGround: false
+};
+
+let titan = {
+  x: 240,
+  y: 220,
+  w: 70,
+  h: 160,
+  alive: true
+};
+
+const gravity = 0.6;
+
+let moveLeft = false;
+let moveRight = false;
+let jump = false;
+let attack = false;
+
+// Touch controls
+function hold(id, variable) {
+  const btn = document.getElementById(id);
+  btn.addEventListener("touchstart", e => {
+    e.preventDefault();
+    window[variable] = true;
+  });
+  btn.addEventListener("touchend", () => {
+    window[variable] = false;
+  });
+}
+
+hold("left", "moveLeft");
+hold("right", "moveRight");
+hold("jump", "jump");
+hold("attack", "attack");
+
+function update() {
+  player.vx = moveLeft ? -4 : moveRight ? 4 : 0;
+
+  if (jump && player.onGround) {
+    player.vy = -12;
+    player.onGround = false;
+  }
+
+  player.vy += gravity;
+  player.x += player.vx;
+  player.y += player.vy;
+
+  // Ground collision
+  if (player.y + player.h > 350) {
+    player.y = 350 - player.h;
+    player.vy = 0;
+    player.onGround = true;
+  }
+
+  // Attack titan nape
+  if (attack && titan.alive) {
+    if (
+      player.x + player.w > titan.x + 20 &&
+      player.x < titan.x + titan.w - 20 &&
+      player.y < titan.y + 40
+    ) {
+      titan.alive = false;
+    }
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Ground
+  ctx.fillStyle = "#228B22";
+  ctx.fillRect(0, 350, canvas.width, 50);
+
+  // Player
+  ctx.fillStyle = "black";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+
+  // Titan
+  if (titan.alive) {
+    ctx.fillStyle = "brown";
+    ctx.fillRect(titan.x, titan.y, titan.w, titan.h);
+
+    // Nape (weak spot)
+    ctx.fillStyle = "red";
+    ctx.fillRect(titan.x + 20, titan.y, titan.w - 40, 18);
+  } else {
+    ctx.fillStyle = "white";
+    ctx.fillText("Titan Defeated!", 220, 200);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
